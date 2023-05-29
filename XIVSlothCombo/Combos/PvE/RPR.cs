@@ -139,7 +139,7 @@ namespace XIVSlothCombo.Combos.PvE
                     }
                 }
 
-                if (actionID is Slice)
+                if (actionID is InfernalSlice)
                 {
                     bool interruptReady = LevelChecked(All.LegSweep) && CanInterruptEnemy() && IsOffCooldown(All.LegSweep);
 
@@ -222,7 +222,7 @@ namespace XIVSlothCombo.Combos.PvE
                         if ((IsEnabled(CustomComboPreset.RPR_ST_SliceCombo_SoD_Double) && LevelChecked(PlentifulHarvest) && enshrouded && GetCooldownRemainingTime(ArcaneCircle) < 9 &&
                             ((gauge.LemureShroud is 4 && GetDebuffRemainingTime(Debuffs.DeathsDesign) < 30) || (gauge.LemureShroud is 3 && GetDebuffRemainingTime(Debuffs.DeathsDesign) < 50))) || // Double Enshroud windows
                             (GetDebuffRemainingTime(Debuffs.DeathsDesign) <= sodRefreshRange && IsOffCooldown(ArcaneCircle)) || // Opener condition
-                            (GetDebuffRemainingTime(Debuffs.DeathsDesign) <= sodRefreshRange && IsOnCooldown(ArcaneCircle))) // Non-2-minute windows  
+                            (GetDebuffRemainingTime(Debuffs.DeathsDesign) <= sodRefreshRange && IsOnCooldown(ArcaneCircle))) // Non-2-minute windows
                             return ShadowOfDeath;
                     }
 
@@ -535,8 +535,8 @@ namespace XIVSlothCombo.Combos.PvE
                 var soulSowOptions = PluginConfiguration.GetCustomBoolArrayValue(Config.RPR_SoulsowOptions);
                 bool soulsowReady = LevelChecked(Soulsow) && !HasEffect(Buffs.Soulsow);
 
-                return ((soulSowOptions.Length > 0) && ((actionID is Harpe && soulSowOptions[0] || 
-                    (actionID is  Slice && soulSowOptions[1]) || 
+                return ((soulSowOptions.Length > 0) && ((actionID is Harpe && soulSowOptions[0] ||
+                    (actionID is  Slice && soulSowOptions[1]) ||
                     (actionID is SpinningScythe && soulSowOptions[2]) ||
                     (actionID is ShadowOfDeath && soulSowOptions[3]) ||
                     (actionID is BloodStalk && soulSowOptions[4])) && soulsowReady && !InCombat()) ||
