@@ -1,8 +1,7 @@
-﻿using Dalamud.Utility;
-using XIVSlothCombo.Attributes;
+﻿using XIVSlothCombo.Attributes;
 using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Combos.PvP;
-using XIVSlothCombo.CustomComboNS.Functions;
+using XIVSlothCombo.Data;
 
 namespace XIVSlothCombo.Combos
 {
@@ -464,6 +463,7 @@ namespace XIVSlothCombo.Combos
 
         [BlueInactive(BLU.Whistle, BLU.Tingle, BLU.MoonFlute, BLU.JKick, BLU.TripleTrident, BLU.Nightbloom, BLU.RoseOfDestruction, BLU.FeatherRain, BLU.Bristle, BLU.GlassDance, BLU.Surpanakha, BLU.MatraMagic, BLU.ShockStrike, BLU.PhantomFlurry)]
         [ReplaceSkill(BLU.MoonFlute)]
+        [ConflictingCombos(BLU_NewMoonFluteOpener)]
         [CustomComboInfo("Moon Flute Opener", "Puts the Full Moon Flute Opener on Moon Flute or Whistle.", BLU.JobID)]
         BLU_Opener = 70001,
 
@@ -522,6 +522,16 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("J Kick Option", "Adds J Kick to the Primal Feature.", BLU.JobID)]
         BLU_PrimalCombo_JKick = 70013,
 
+        [BlueInactive(BLU.SeaShanty)]
+        [ParentCombo(BLU_PrimalCombo)]
+        [CustomComboInfo("Sea Shanty Option", "Adds Sea Shanty to the Primal Feature.", BLU.JobID)]
+        BLU_PrimalCombo_SeaShanty = 70024,
+
+        [BlueInactive(BLU.WingedRepropbation)]
+        [ParentCombo(BLU_PrimalCombo)]
+        [CustomComboInfo("Winged Reprobration Option", "Adds Winged Reprobation to the Primal Feature.", BLU.JobID)]
+        BLU_PrimalCombo_WingedReprobation = 70025,
+
         [BlueInactive(BLU.PerpetualRay, BLU.SharpenedKnife)]
         [CustomComboInfo("Perpetual Ray into Sharpened Knife Feature", "Turns Perpetual Ray into Sharpened Knife when target is stunned and in melee range.", BLU.JobID)]
         BLU_PerpetualRayStunCombo = 70014,
@@ -555,7 +565,23 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Nightbloom Option", "Adds Nightbloom to the Primal Feature.", BLU.JobID)]
         BLU_PrimalCombo_Nightbloom = 70020,
 
-        // Last value = 70020
+        [ReplaceSkill(BLU.MoonFlute)]
+        [BlueInactive(BLU.Whistle, BLU.Tingle, BLU.RoseOfDestruction, BLU.MoonFlute, BLU.JKick, BLU.TripleTrident, BLU.Nightbloom, BLU.WingedRepropbation, BLU.SeaShanty, BLU.BeingMortal, BLU.ShockStrike, BLU.Surpanakha, BLU.MatraMagic, BLU.PhantomFlurry, BLU.Bristle)]
+        [ConflictingCombos(BLU_Opener)]
+        [CustomComboInfo("New BLU Moon Flute Opener (Level 80 Edition)", "Turns Moon Flute into a full opener (level 80 update)", BLU.JobID)]
+        BLU_NewMoonFluteOpener = 70021,
+
+        [BlueInactive(BLU.BreathOfMagic, BLU.MortalFlame)]
+        [ParentCombo(BLU_NewMoonFluteOpener)]
+        [CustomComboInfo("DoT Opener", "Changes the opener to apply either Mortal Flame or Breath of Magic instead of using Winged Reprobation", BLU.JobID)]
+        BLU_NewMoonFluteOpener_DoTOpener = 70022,
+
+        [ReplaceSkill(BLU.DeepClean)]
+        [BlueInactive(BLU.PeatPelt, BLU.DeepClean)]
+        [CustomComboInfo("Peat Clean", "Changes Deep Clean to Peat Pelt if current target is not inflicted with Begrimed.", BLU.JobID)]
+        BLU_PeatClean = 70023,
+
+        // Last value = 70023
 
         #endregion
 
@@ -1007,9 +1033,8 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Stalwart Soul Combo", "Replace Stalwart Soul with its combo chain.", DRK.JobID, 0, "", "")]
         DRK_StalwartSoulCombo = 5001,
 
-        [ReplaceSkill(DRK.Souleater)]
         [ParentCombo(DRK_MainComboCDs_Group)]
-        [CustomComboInfo("Bloodspiller Feature", "Replace Souleater and Stalwart Soul with Bloodspiller and Quietus when Delirium is active.", DRK.JobID, 0, "", "")]
+        [CustomComboInfo("Bloodspiller Feature", "Adds Bloodspiller when Delirium is active.", DRK.JobID, 0, "", "")]
         DRK_Bloodspiller = 5002,
 
         [ReplaceSkill(DRK.StalwartSoul)]
@@ -1536,7 +1561,7 @@ namespace XIVSlothCombo.Combos
         MCH_ST_Wildfire = 8015,
 
         [ParentCombo(MCH_AoE_SimpleMode)]
-        [CustomComboInfo("BioBlaster Option", "Adds Bioblaster to the Spreadshot feature", MCH.JobID, 0, "", "")]
+        [CustomComboInfo("BioBlaster Option", "Adds Bioblaster to the feature", MCH.JobID, 0, "", "")]
         MCH_AoE_Simple_Bioblaster = 8016,
 
         [CustomComboInfo("Barrel Feature", "Adds Barrel Stabilizer to Single Button Heat Blast and Single Button Auto Crossbow Features when below 50 Heat Gauge and it is off cooldown", MCH.JobID, 0, "", "")]
@@ -1592,15 +1617,15 @@ namespace XIVSlothCombo.Combos
         MCH_ST_Simple_Assembling_ChainSaw = 8031,
 
         [ParentCombo(MCH_ST_Simple_Assembling_Drill)]
-        [CustomComboInfo("Only use Drill Option", "Only use Drill when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
+        [CustomComboInfo("Drill Option Pooling Option", "Only use Drill when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
         MCH_ST_Simple_Assembling_Drill_MaxCharges = 8032,
 
         [ParentCombo(MCH_ST_Simple_Assembling_AirAnchor)]
-        [CustomComboInfo("Only use Air Anchor Option", "Only use Air Anchor when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
+        [CustomComboInfo("Air Anchor Pooling Option", "Only use Air Anchor when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
         MCH_ST_Simple_Assembling_AirAnchor_MaxCharges = 8033,
 
         [ParentCombo(MCH_ST_Simple_Assembling_ChainSaw)]
-        [CustomComboInfo("Only use Chain Saw Option", "Only use Chain Saw when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
+        [CustomComboInfo("Chain Saw Pooling Option", "Only use Chain Saw when you have max charges of Reassemble.", MCH.JobID, 0, "", "")]
         MCH_ST_Simple_Assembling_ChainSaw_MaxCharges = 8034,
 
         [ParentCombo(MCH_ST_Simple_Stabilizer)]
@@ -1629,7 +1654,31 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Cure Option", "Use Variant Cure when HP is below set threshold.", MCH.JobID)]
         MCH_Variant_Cure = 8040,
 
-        // Last value = 8040
+        [ParentCombo(MCH_AoE_SimpleMode)]
+        [CustomComboInfo("Chain Saw Option", "Adds Chain Saw to the feature.", MCH.JobID)]
+        MCH_AoE_ChainSaw = 8041,
+
+        [ParentCombo(MCH_AoE_SimpleMode)]
+        [CustomComboInfo("Simple Assembling Option", "Pairs reassemble uses with the following skills.\nBefore acquiring Bioblaster it will be used with Auto Crossbow and Spread Shot.", MCH.JobID)]
+        MCH_AoE_Simple_Assembling = 8042,
+
+        [ParentCombo(MCH_AoE_Simple_Assembling)]
+        [CustomComboInfo("Chain Saw Option", $"Use Reassemble with Chain Saw when available.", MCH.JobID)]
+        MCH_AoE_Simple_Assembling_ChainSaw = 8043,
+
+        [ParentCombo(MCH_AoE_Simple_Assembling_ChainSaw)]
+        [CustomComboInfo("Chain Saw Pooling Option", "Only use Chain Saw when you have max charges of Reassemble.", MCH.JobID)]
+        MCH_AoE_Simple_Assembling_ChainSaw_MaxCharges = 8044,
+
+        [ParentCombo(MCH_AoE_Simple_Assembling)]
+        [CustomComboInfo("Bioblaster Option", $"Use Reassemble with Bioblaster when available.", MCH.JobID)]
+        MCH_AoE_Simple_Assembling_Bioblaster = 8045,
+
+        [ParentCombo(MCH_AoE_Simple_Assembling_Bioblaster)]
+        [CustomComboInfo("Bioblaster Pooling Option", "Only use Bioblaster when you have max charges of Reassemble.", MCH.JobID)]
+        MCH_AoE_Simple_Assembling_Bioblaster_MaxCharges = 8046,
+
+        // Last value = 8046
 
         #endregion
 
@@ -2210,7 +2259,7 @@ namespace XIVSlothCombo.Combos
         ReaperPositionalConfig = 12000,
 
         #region Single Target (Slice) Combo Section
-        [ReplaceSkill(RPR.Slice)]
+        [ReplaceSkill(RPR.Slice, RPR.Harpe)]
         [CustomComboInfo("Slice Combo Feature", "Replace Slice with its combo chain.\nIf all sub options are toggled will turn into a full one button rotation (Advanced Reaper)", RPR.JobID, 0, "", "")]
         RPR_ST_SliceCombo = 12001,
 
@@ -2529,9 +2578,9 @@ namespace XIVSlothCombo.Combos
                 [CustomComboInfo("Gap close with Corps-a-corps Option", "Use Corp-a-corps when out of melee range and you have enough mana to start the melee combo.", RDM.JobID, 430)]
                 RDM_AoE_MeleeCombo_CorpsGapCloser = 13422,
 
-                [ParentCombo(RDM_AoE_MeleeCombo)]
-                [CustomComboInfo("Unbalance Mana Option", "Use Acceleration to unbalance mana prior to starting melee combo", RDM.JobID, 410)]
-                RDM_AoE_MeleeCombo_UnbalanceMana = 13423,
+                //[ParentCombo(RDM_AoE_MeleeCombo)]
+                //[CustomComboInfo("Unbalance Mana Option", "Use Acceleration to unbalance mana prior to starting melee combo", RDM.JobID, 410)]
+                //RDM_AoE_MeleeCombo_UnbalanceMana = 13423,
 
             [ParentCombo(RDM_AoE_DPS)]
             [CustomComboInfo("Melee Finisher Option", "Add Verflare/Verholy and other finishing moves.", RDM.JobID, 510)]
@@ -3119,7 +3168,7 @@ namespace XIVSlothCombo.Combos
             SCH_AoE_Heal_Aetherflow = 16252,
 
             [ParentCombo(SCH_AoE_Heal_Aetherflow)]
-            [CustomComboInfo("Indomitability Ready Only Option", "Only uses Aetherflow is Indomitability is ready to use.", SCH.JobID)]
+            [CustomComboInfo("Indomitability Ready Only Option", "Only uses Aetherflow if Indomitability is ready to use.", SCH.JobID)]
             SCH_AoE_Heal_Aetherflow_Indomitability = 16253,
 
             [ParentCombo(SCH_AoE_Heal)]
@@ -3172,7 +3221,7 @@ namespace XIVSlothCombo.Combos
         SCH_Raise = 16400,
 
         [ReplaceSkill(SCH.WhisperingDawn, SCH.FeyBlessing, SCH.FeyBlessing, SCH.Aetherpact, SCH.Dissipation)]
-        [CustomComboInfo("Fairy Feature", "Change all fairy actions into Fairy Summons if you do not have a fairy summoned.", SCH.JobID, 11)]
+        [CustomComboInfo("Fairy Feature", "Change all fairy actions into Summon Eos when the Fairy is not summoned.", SCH.JobID, 11)]
         SCH_FairyReminder = 16500,
 
         [ReplaceSkill(SCH.DeploymentTactics)]
@@ -3796,6 +3845,11 @@ namespace XIVSlothCombo.Combos
         [CustomComboInfo("Melee Plunge Option", "Uses Plunge whilst in melee range, and not just as a gap-closer.", DRK.JobID)]
         DRKPvP_PlungeMelee = 115002,
 
+        [SecretCustomCombo]
+        [ParentCombo(DRKPvP_Burst)]
+        [CustomComboInfo("Salted Earth Option", "Adds Salted Earth to Burst mode.", DRK.JobID)]
+        DRKPvP_SaltedEarth = 115003,
+
         // Last value = 115002
 
         #endregion
@@ -4005,7 +4059,7 @@ namespace XIVSlothCombo.Combos
 
         [SecretCustomCombo]
         [ParentCombo(RPRPvP_Burst)]
-        [CustomComboInfo("Arcane Circle Option", "Adds Arcane Circle to the main combo when under the set HP perecentage.", RPR.JobID)]
+        [CustomComboInfo("Arcane Crest Option", "Adds Arcane Crest to the main combo when under the set HP perecentage.", RPR.JobID)]
         RPRPvP_Burst_ArcaneCircle = 122008,
 
         // Last value = 122008

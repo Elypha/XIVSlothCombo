@@ -43,7 +43,6 @@ namespace XIVSlothCombo.Combos.PvE
             // Faerie
             SummonSeraph = 16545,
             SummonEos = 17215,
-            SummonSelene = 17216,
             WhisperingDawn = 16537,
             FeyIllumination = 16538,
             Dissipation = 3587,
@@ -87,7 +86,9 @@ namespace XIVSlothCombo.Combos.PvE
             };
 
         // Class Gauge
+
         private static SCHGauge Gauge => CustomComboFunctions.GetJobGauge<SCHGauge>();
+
         private static bool HasAetherflow(this SCHGauge gauge) => (gauge.Aetherflow > 0);
 
         internal enum OpenerState
@@ -97,33 +98,33 @@ namespace XIVSlothCombo.Combos.PvE
             PostOpener,
         }
 
-        internal static class Config
+        public static class Config
         {
             #region DPS
-            internal static UserInt
+            public static UserInt
                 SCH_ST_DPS_AltMode = new("SCH_ST_DPS_AltMode"),
                 SCH_ST_DPS_LucidOption = new("SCH_ST_DPS_LucidOption"),
                 SCH_ST_DPS_BioOption = new("SCH_ST_DPS_BioOption"),
                 SCH_ST_DPS_ChainStratagemOption = new("SCH_ST_DPS_ChainStratagemOption");
-            internal static UserBool
+            public static UserBool
                 SCH_ST_DPS_Adv = new("SCH_ST_DPS_Adv"),
                 SCH_ST_DPS_Bio_Adv = new("SCH_ST_DPS_Bio_Adv"),
                 SCH_ST_DPS_EnergyDrain_Adv = new("SCH_ST_DPS_EnergyDrain_Adv");
-            internal static UserFloat
+            public static UserFloat
                 SCH_ST_DPS_Bio_Threshold = new("SCH_ST_DPS_Bio_Threshold"),
                 SCH_ST_DPS_EnergyDrain = new("SCH_ST_DPS_EnergyDrain");
-            internal static UserBoolArray
+            public static UserBoolArray
                 SCH_ST_DPS_Adv_Actions = new("SCH_ST_DPS_Adv_Actions");
             #endregion
 
             #region Healing
-            internal static UserInt
+            public static UserInt
                 SCH_AoE_LucidOption = new("SCH_AoE_LucidOption"),
                 SCH_AoE_Heal_LucidOption = new("SCH_AoE_Heal_LucidOption"),
                 SCH_ST_Heal_LucidOption = new("SCH_ST_Heal_LucidOption"),
                 SCH_ST_Heal_AdloquiumOption = new("SCH_ST_Heal_AdloquiumOption"),
                 SCH_ST_Heal_LustrateOption = new("SCH_ST_Heal_LustrateOption");
-            internal static UserBool
+            public static UserBool
                 SCH_ST_Heal_Adv = new("SCH_ST_Heal_Adv"),
                 SCH_ST_Heal_UIMouseOver = new("SCH_ST_Heal_UIMouseOver"),
                 SCH_DeploymentTactics_Adv = new ("SCH_DeploymentTactics_Adv"),
@@ -138,8 +139,7 @@ namespace XIVSlothCombo.Combos.PvE
                 SCH_Aetherflow_Display = new("SCH_Aetherflow_Display"),
                 SCH_Aetherflow_Recite_ExcogMode = new("SCH_Aetherflow_Recite_ExcogMode"),
                 SCH_Aetherflow_Recite_IndomMode = new("SCH_Aetherflow_Recite_IndomMode"),
-                SCH_Recitation_Mode = new("SCH_Recitation_Mode"),
-                SCH_FairyFeature = new("SCH_FairyFeature");
+                SCH_Recitation_Mode = new("SCH_Recitation_Mode");
             #endregion
 
         }
@@ -231,7 +231,8 @@ namespace XIVSlothCombo.Combos.PvE
                     if (!HasAetherFlows)
                     {
                         bool ShowAetherflowOnAll = (Config.SCH_Aetherflow_Display == 1);
-                        if ((actionID is EnergyDrain && !ShowAetherflowOnAll) || ShowAetherflowOnAll)
+                        if (((actionID is EnergyDrain && !ShowAetherflowOnAll) || ShowAetherflowOnAll) &&
+                            IsOffCooldown(actionID))
                         {
                             if (IsEnabled(CustomComboPreset.SCH_Aetherflow_Dissipation) &&
                                 ActionReady(Dissipation) &&
@@ -258,14 +259,12 @@ namespace XIVSlothCombo.Combos.PvE
                 => actionID is All.Swiftcast && IsOnCooldown(All.Swiftcast) ? Resurrection : actionID;
         }
 
-        // Replaces Fairy abilities with Fairy summoning with Eos (default) or Selene
+        // Replaces Fairy abilities with Fairy summoning with Eos
         internal class SCH_FairyReminder : CustomCombo
         {
             protected internal override CustomComboPreset Preset { get; } = CustomComboPreset.SCH_FairyReminder;
             protected override uint Invoke(uint actionID, uint lastComboMove, float comboTime, byte level)
-                => FairyList.Contains(actionID) && !HasPetPresent() && Gauge.SeraphTimer == 0
-                    ? (Config.SCH_FairyFeature == 1) ? SummonSelene : SummonEos
-                    : actionID;
+                => FairyList.Contains(actionID) && !HasPetPresent() && Gauge.SeraphTimer == 0 ? SummonEos : actionID;
         }
 
         /*
