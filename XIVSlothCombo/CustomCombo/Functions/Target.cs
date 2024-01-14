@@ -116,11 +116,13 @@ namespace XIVSlothCombo.CustomComboNS.Functions
 
         /// <summary> Grabs healable target. Checks Soft Target then Hard Target. 
         /// If Party UI Mouseover is enabled, find the target and return that. Else return the player. </summary>
+        /// <param name="checkMOPartyUI">Checks for a mouseover target.</param>
+        /// <param name="restrictToMouseover">Forces only the mouseover target, may return null.</param>
         /// <returns> GameObject of a player target. </returns>
         public static unsafe GameObject? GetHealTarget(bool checkMOPartyUI = false, bool restrictToMouseover = false)
         {
             GameObject? healTarget = null;
-            TargetManager tm = Service.TargetManager;
+            ITargetManager tm = Service.TargetManager;
             
             if (HasFriendlyTarget(tm.SoftTarget)) healTarget = tm.SoftTarget;
             if (healTarget is null && HasFriendlyTarget(CurrentTarget) && !restrictToMouseover) healTarget = CurrentTarget;
@@ -128,11 +130,13 @@ namespace XIVSlothCombo.CustomComboNS.Functions
             if (checkMOPartyUI)
             {
                 StructsObject.GameObject* t = PartyTargetingService.UITarget;
-                if (t != null)
+                if (t != null && t->ObjectID != 0)
                 {
-                    long o = PartyTargetingService.GetObjectID(t);
-                    GameObject? uiTarget =  Service.ObjectTable.Where(x => x.ObjectId == o).First();
-                    if (HasFriendlyTarget(uiTarget)) healTarget = uiTarget;
+                    GameObject? uiTarget =  Service.ObjectTable.Where(x => x.ObjectId == t->ObjectID).FirstOrDefault();
+                    if (uiTarget != null && HasFriendlyTarget(uiTarget)) healTarget = uiTarget;
+
+                    if (restrictToMouseover)
+                        return healTarget;
                 }
 
                 if (restrictToMouseover)

@@ -7,6 +7,8 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using DalamudStatus = Dalamud.Game.ClientState.Statuses; // conflicts with structs if not defined
 using FFXIVClientStructs.FFXIV.Client.Game;
 using XIVSlothCombo.Services;
+using Dalamud.Plugin.Services;
+using System.Collections.Concurrent;
 
 namespace XIVSlothCombo.Data
 {
@@ -16,13 +18,13 @@ namespace XIVSlothCombo.Data
         private const uint InvalidObjectID = 0xE000_0000;
 
         // Invalidate these
-        private readonly Dictionary<(uint StatusID, uint? TargetID, uint? SourceID), DalamudStatus.Status?> statusCache = new();
-        private readonly Dictionary<uint, CooldownData> cooldownCache = new();
+        private readonly ConcurrentDictionary<(uint StatusID, uint? TargetID, uint? SourceID), DalamudStatus.Status?> statusCache = new();
+        private readonly ConcurrentDictionary<uint, CooldownData> cooldownCache = new();
 
         // Do not invalidate these
-        private readonly Dictionary<uint, byte> cooldownGroupCache = new();
-        private readonly Dictionary<Type, JobGaugeBase> jobGaugeCache = new();
-        private readonly Dictionary<(uint ActionID, uint ClassJobID, byte Level), (ushort CurrentMax, ushort Max)> chargesCache = new();
+        private readonly ConcurrentDictionary<uint, byte> cooldownGroupCache = new();
+        private readonly ConcurrentDictionary<Type, JobGaugeBase> jobGaugeCache = new();
+        private readonly ConcurrentDictionary<(uint ActionID, uint ClassJobID, byte Level), (ushort CurrentMax, ushort Max)> chargesCache = new();
 
         /// <summary> Initializes a new instance of the <see cref="CustomComboCache"/> class. </summary>
         public CustomComboCache() => Service.Framework.Update += Framework_Update;
@@ -129,7 +131,7 @@ namespace XIVSlothCombo.Data
             if (actionManager == null)
                 return 0;
 
-            int cost = ActionManager.GetActionCost(ActionType.Spell, actionID, 0, 0, 0, 0);
+            int cost = ActionManager.GetActionCost(ActionType.Action, actionID, 0, 0, 0, 0);
 
             return cost;
         }
@@ -148,7 +150,7 @@ namespace XIVSlothCombo.Data
         }
 
         /// <summary> Triggers when the game framework updates. Clears cooldown and status caches. </summary>
-        private unsafe void Framework_Update(Framework framework)
+        private unsafe void Framework_Update(IFramework framework)
         {
             statusCache.Clear();
             cooldownCache.Clear();

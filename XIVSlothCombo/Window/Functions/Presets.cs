@@ -1,12 +1,14 @@
 ﻿using Dalamud.Interface.Colors;
 using Dalamud.Utility;
+using ECommons.ImGuiMethods;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using ImGuiNET;
-using System;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 using XIVSlothCombo.Attributes;
 using XIVSlothCombo.Combos;
+using XIVSlothCombo.Combos.PvE;
 using XIVSlothCombo.Core;
 using XIVSlothCombo.Data;
 using XIVSlothCombo.Extensions;
@@ -16,7 +18,7 @@ namespace XIVSlothCombo.Window.Functions
 {
     internal class Presets : ConfigWindow
     {
-        internal static void DrawPreset(CustomComboPreset preset, CustomComboInfoAttribute info, ref int i)
+        internal unsafe static void DrawPreset(CustomComboPreset preset, CustomComboInfoAttribute info, ref int i)
         {
             var enabled = Service.Configuration.IsEnabled(preset);
             var secret = PluginConfiguration.IsSecret(preset);
@@ -30,6 +32,27 @@ namespace XIVSlothCombo.Window.Functions
             {
                 if (enabled)
                 {
+                    if (preset == CustomComboPreset.UnlockGag)
+                    {
+                        Util.OpenLink("https://www.youtube.com/watch?v=qo__6MZIg6U");
+                    }
+
+                    if (preset == CustomComboPreset.SuperSpeedGag)
+                    {
+                        if (ActionManager.Instance()->GetActionStatus(ActionType.Action, All.Sprint) == 0)
+                            ActionManager.Instance()->UseAction(ActionType.Action, All.Sprint);
+                    }
+
+                    if (preset == CustomComboPreset.SnakeGag)
+                    {
+                        Util.OpenLink("https://youtu.be/r6gGcrjDmec");
+                    }
+
+                    if (preset == CustomComboPreset.GunGag)
+                    {
+                        Util.OpenLink("https://youtu.be/51CTM49rcrs");
+                    }
+
                     EnableParentPresets(preset);
                     Service.Configuration.EnabledActions.Add(preset);
                     foreach (var conflict in conflicts)
@@ -61,7 +84,7 @@ namespace XIVSlothCombo.Window.Functions
                 ImGui.PushItemWidth(length.Length());
             }
 
-                ImGui.TextWrapped($"{info.Description}");
+            ImGui.TextWrapped($"{info.Description}");
 
             if (preset.GetHoverAttribute() != null)
             {
@@ -77,33 +100,32 @@ namespace XIVSlothCombo.Window.Functions
             ImGui.PopStyleColor();
             ImGui.Spacing();
 
-            UserConfigItems.Draw(preset, enabled);
-
-            if (preset == CustomComboPreset.NIN_ST_SimpleMode_BalanceOpener || preset == CustomComboPreset.NIN_ST_AdvancedMode_BalanceOpener)
-            {
-                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + length.Length());
-                if (ImGui.Button($"Image of rotation###ninrtn{i}"))
-                {
-                    Util.OpenLink("https://i.imgur.com/q3lXeSZ.png");
-                }
-            }
-
             if (conflicts.Length > 0)
             {
-                var conflictText = conflicts.Select(conflict =>
+                ImGui.TextColored(ImGuiColors.DalamudRed, "Conflicts with:");
+                StringBuilder conflictBuilder = new();
+                ImGui.Indent();
+                foreach (var conflict in conflicts)
                 {
-                    var conflictInfo = conflict.GetComboAttribute();
+                    var comboInfo = conflict.GetAttribute<CustomComboInfoAttribute>();
+                    conflictBuilder.Insert(0, $"{comboInfo.FancyName}");
+                    var par2 = conflict;
 
-                    return $"\n - {conflictInfo.FancyName}";
+                    while (PluginConfiguration.GetParent(par2) != null)
+                    {
+                        var subpar = PluginConfiguration.GetParent(par2);
+                        conflictBuilder.Insert(0, $"{subpar?.GetAttribute<CustomComboInfoAttribute>().FancyName} -> ");
+                        par2 = subpar!.Value;
 
+                    }
 
-                }).Aggregate((t1, t2) => $"{t1}{t2}");
+                    conflictBuilder.Insert(0, $"[{comboInfo.JobShorthand}] ");
 
-                if (conflictText.Length > 0)
-                {
-                    ImGui.TextColored(ImGuiColors.DalamudRed, $"Conflicts with: {conflictText}");
-                    ImGui.Spacing();
+                    ImGuiEx.Text(GradientColor.Get(ImGuiColors.DalamudRed, CustomComboNS.Functions.CustomComboFunctions.IsEnabled(conflict) ? ImGuiColors.HealerGreen : ImGuiColors.DalamudRed, 1500), $"- {conflictBuilder}");
+                    conflictBuilder.Clear();
                 }
+                ImGui.Unindent();
+                ImGui.Spacing();
             }
 
             if (blueAttr != null)
@@ -136,11 +158,11 @@ namespace XIVSlothCombo.Window.Functions
                     while (PluginConfiguration.GetParent(par2) != null)
                     {
                         var subpar = PluginConfiguration.GetParent(par2);
-                        builder.Insert(0,$"{subpar?.GetAttribute<CustomComboInfoAttribute>().FancyName} -> ");
+                        builder.Insert(0, $"{subpar?.GetAttribute<CustomComboInfoAttribute>().FancyName} -> ");
                         par2 = subpar!.Value;
 
                     }
-                    
+
                     ImGui.TextWrapped($"- {builder}");
                     builder.Clear();
                 }
@@ -195,6 +217,17 @@ namespace XIVSlothCombo.Window.Functions
                 ImGui.PopStyleColor();
             }
 
+            UserConfigItems.Draw(preset, enabled);
+
+            if (preset == CustomComboPreset.NIN_ST_SimpleMode_BalanceOpener || preset == CustomComboPreset.NIN_ST_AdvancedMode_BalanceOpener)
+            {
+                ImGui.SetCursorPosX(ImGui.GetCursorPosX() + length.Length());
+                if (ImGui.Button($"Image of rotation###ninrtn{i}"))
+                {
+                    Util.OpenLink("https://i.imgur.com/q3lXeSZ.png");
+                }
+            }
+
             i++;
 
             var hideChildren = Service.Configuration.HideChildren;
@@ -239,7 +272,7 @@ namespace XIVSlothCombo.Window.Functions
                     }
 
                     ImGui.Unindent();
-                }   
+                }
                 else
                 {
                     i += AllChildren(presetChildren[preset]);

@@ -20,6 +20,9 @@ using XIVSlothCombo.Services;
 using XIVSlothCombo.Window;
 using XIVSlothCombo.Window.Tabs;
 using ECommons;
+using Dalamud.Plugin.Services;
+using System.Reflection;
+using ECommons.DalamudServices;
 
 namespace XIVSlothCombo
 {
@@ -29,6 +32,7 @@ namespace XIVSlothCombo
         private const string Command = "/scombo";
 
         private readonly ConfigWindow configWindow;
+        private HttpClient httpClient = new();
         
         private readonly TextPayload starterMotd = new("[Sloth Message of the Day] ");
         private static uint? jobID;
@@ -38,9 +42,9 @@ namespace XIVSlothCombo
             get => jobID;
             set
             {
-                if (jobID != value)
+                if (jobID != value && value != null)
                 {
-                    Dalamud.Logging.PluginLog.Debug($"Switched to job {value}");
+                    Service.PluginLog.Debug($"Switched to job {value}");
                     PvEFeatures.HasToOpenJob = true;
                 }
                 jobID = value;
@@ -52,10 +56,11 @@ namespace XIVSlothCombo
         public XIVSlothCombo(DalamudPluginInterface pluginInterface)
         {
             pluginInterface.Create<Service>();
+            ECommonsMain.Init(pluginInterface, this);
 
             Service.Configuration = pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
             Service.Address = new PluginAddressResolver();
-            Service.Address.Setup();
+            Service.Address.Setup(Service.SigScanner);
 
             if (Service.Configuration.Version == 4)
                 UpgradeConfig4();
@@ -65,7 +70,6 @@ namespace XIVSlothCombo
             ActionWatching.Enable();
             Combos.JobHelpers.AST.Init();
 
-            ECommonsMain.Init(pluginInterface, this);
             configWindow = new ConfigWindow(this);
 
             Service.Interface.UiBuilder.Draw += DrawUI;
@@ -83,10 +87,16 @@ namespace XIVSlothCombo
             Service.Framework.Update += CheckCurrentJob;
 
             KillRedundantIDs();
+
+#if DEBUG
+            PvEFeatures.HasToOpenJob = false;
+            configWindow.Visible = true;
+#endif
         }
 
-        private static void CheckCurrentJob(Framework framework)
+        private static void CheckCurrentJob(IFramework framework)
         {
+            if (Service.ClientState.LocalPlayer is not null)
             JobID = Service.ClientState.LocalPlayer?.ClassJob?.Id;
         }
         private static void KillRedundantIDs()
@@ -110,11 +120,13 @@ namespace XIVSlothCombo
             Service.Configuration.ResetFeatures("v3.0.18.0_GNBCleanup", Enumerable.Range(7000, 700).ToArray());
             Service.Configuration.ResetFeatures("v3.0.18.0_PvPCleanup", Enumerable.Range(80000, 11000).ToArray());
             Service.Configuration.ResetFeatures("v3.0.18.1_PLDRework", Enumerable.Range(11000, 100).ToArray());
+            Service.Configuration.ResetFeatures("v3.1.0.1_BLMRework", Enumerable.Range(2000, 100).ToArray());
+            Service.Configuration.ResetFeatures("v3.1.1.0_DRGRework", Enumerable.Range(6000, 800).ToArray());
         }
 
         private void DrawUI() => configWindow.Draw();
 
-        private void PrintLoginMessage(object? sender, EventArgs e)
+        private void PrintLoginMessage()
         {
             Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(task => ResetFeatures());
 
@@ -126,18 +138,19 @@ namespace XIVSlothCombo
         {
             try
             {
-                using HttpResponseMessage? motd = Dalamud.Utility.Util.HttpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
+                string basicMessage = $"Welcome to XIVSlothCombo v{this.GetType().Assembly.GetName().Version}!";
+                using HttpResponseMessage? motd = httpClient.GetAsync("https://raw.githubusercontent.com/Nik-Potokar/XIVSlothCombo/main/res/motd.txt").Result;
                 motd.EnsureSuccessStatusCode();
                 string? data = motd.Content.ReadAsStringAsync().Result;
                 List<Payload>? payloads = new()
                 {
                     starterMotd,
                     EmphasisItalicPayload.ItalicsOn,
-                    new TextPayload(data.Trim()),
+                    string.IsNullOrEmpty(data) ? new TextPayload(basicMessage) : new TextPayload(data.Trim()),
                     EmphasisItalicPayload.ItalicsOff
                 };
 
-                Service.ChatGui.PrintChat(new XivChatEntry
+                Service.ChatGui.Print(new XivChatEntry
                 {
                     Message = new SeString(payloads),
                     Type = XivChatType.Echo
@@ -146,7 +159,7 @@ namespace XIVSlothCombo
 
             catch (Exception ex)
             {
-                Dalamud.Logging.PluginLog.Error(ex, "Unable to retrieve MotD");
+                Service.PluginLog.Error(ex, "Unable to retrieve MotD");
             }
         }
 
@@ -159,7 +172,7 @@ namespace XIVSlothCombo
             configWindow?.Dispose();
 
             Service.CommandManager.RemoveHandler(Command);
-
+            Service.Framework.Update -= CheckCurrentJob;
             Service.Interface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
             Service.Interface.UiBuilder.Draw -= DrawUI;
 
@@ -167,10 +180,19 @@ namespace XIVSlothCombo
             Service.ComboCache?.Dispose();
             ActionWatching.Dispose();
             Combos.JobHelpers.AST.Dispose();
+            DisposeOpeners();
 
             Service.ClientState.Login -= PrintLoginMessage;
         }
 
+
+        private void DisposeOpeners()
+        {
+            NIN.NIN_ST_SimpleMode.NINOpener.Dispose();
+            NIN.NIN_ST_AdvancedMode.NINOpener.Dispose();
+            NIN.NIN_ST_SimpleMode.NINOpener.Dispose();
+            NIN.NIN_ST_AdvancedMode.NINOpener.Dispose();
+        }
         private void OnOpenConfigUi() => configWindow.Visible = !configWindow.Visible;
 
         private void OnCommand(string command, string arguments)
@@ -505,7 +527,7 @@ namespace XIVSlothCombo
 
                         catch (Exception ex)
                         {
-                            Dalamud.Logging.PluginLog.Error(ex, "Debug Log");
+                            Service.PluginLog.Error(ex, "Debug Log");
                             Service.ChatGui.Print("Unable to write Debug log.");
                             break;
                         }
@@ -517,7 +539,7 @@ namespace XIVSlothCombo
                     {
                         var jobname = ConfigWindow.groupedPresets.Where(x => x.Value.Any(y => y.Info.JobShorthand.Equals(argumentsParts[0].ToLower(), StringComparison.CurrentCultureIgnoreCase))).FirstOrDefault().Key;
                         var header = $"{jobname} - {argumentsParts[0].ToUpper()}";
-                        Dalamud.Logging.PluginLog.Debug($"{jobname}");
+                        Service.PluginLog.Debug($"{jobname}");
                         PvEFeatures.HeaderToOpen = header;
                     }
                     break;
